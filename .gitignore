@@ -1,1 +1,6 @@
 data/
+.idea/
+reports/
+*.pyc
+*.png
+*.pdf

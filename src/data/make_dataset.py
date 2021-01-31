@@ -2,12 +2,17 @@ import luigi
 import numpy as np
 from pathlib import Path
 import matplotlib.pyplot as plt
+
+from sklearn.model_selection import train_test_split
+
 from tqdm import tqdm
 
-class make_dataset(luigi.Task):
+class MakeDataset(luigi.Task):
     _data_folder_path = Path('data/raw/')
 
-    _num_imgs = 1000
+    _plot_images = False
+
+    _num_imgs = 60000
     _img_size = 8
     _min_object_dim_size = 1
     _max_object_dim_size = 4
@@ -15,8 +20,10 @@ class make_dataset(luigi.Task):
 
 
     def output(self):
-        yield luigi.LocalTarget(self._data_folder_path / f"image_array.npy")
-        yield luigi.LocalTarget(self._data_folder_path / f"bbox_array.npy")
+        yield [luigi.LocalTarget(self._data_folder_path / f"image_array.npy"),
+               luigi.LocalTarget(self._data_folder_path / f"bbox_array.npy"),
+               luigi.LocalTarget(self._data_folder_path / f"eval_images_array.npy"),
+               luigi.LocalTarget(self._data_folder_path / f"eval_bbox_array.npy")]
 
     def run(self):
 
@@ -43,25 +50,40 @@ class make_dataset(luigi.Task):
                 # store bbox of rectangle
                 bboxes[i_img, i_object] = [x, y, width, height]
 
-            # Create png from image array
-            fig.clear()
-            ax = fig.add_subplot(111)
-            ax.imshow(imges_arr[i_img])
-            ax.set_axis_off()
-            fig.savefig(self._data_folder_path / f"i_img_{i_img}.png")
+            if self._plot_images:
+                # Create png from image array
+                fig.clear()
+                ax = fig.add_subplot(111)
+                ax.imshow(imges_arr[i_img])
+                ax.set_axis_off()
+                fig.savefig(self._data_folder_path / f"i_img_{i_img}.png")
+
+        # flatten image arrays
+        flat_images = list()
+        for i_img in tqdm(range(imges_arr.shape[0])):
+            flat_img = imges_arr[i_img].flatten()
+            flat_images.append(flat_img)
 
         # Store image array and bboxes
+        # Set test data aside for evaluation
+        x_train, x_test, y_train, y_test = train_test_split(flat_images,
+                                                            bboxes,
+                                                            test_size=0.1)
         np.save(self._data_folder_path / f"image_array.npy",
-                imges_arr)
+                np.array(x_train))
         np.save(self._data_folder_path / f"bbox_array.npy",
-                bboxes)
+                y_train)
+        np.save(self._data_folder_path / f"eval_images_array.npy",
+                np.array(x_test))
+        np.save(self._data_folder_path / f"eval_bbox_array.npy",
+                y_test)
 
         return
 
 
 if __name__ == "__main__":
     print("test")
-    luigi.build([make_dataset()],
+    luigi.build([MakeDataset()],
                 local_scheduler=True)
 
 
