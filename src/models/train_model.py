@@ -9,7 +9,7 @@ from tensorflow.keras import layers
 
 from sklearn.model_selection import train_test_split
 
-from src.data.make_dataset import MakeDataset
+from src.data.preprocess_dataset import PreprocessData
 
 
 class TrainOneRectangleDNN(luigi.Task):
@@ -20,7 +20,7 @@ class TrainOneRectangleDNN(luigi.Task):
     _path_to_train_hist_plot = Path("reports/figures/single_rec_dnn.pdf")
 
     def requires(self):
-        yield MakeDataset()
+        yield PreprocessData()
 
     def output(self):
         return [luigi.LocalTarget(self._path_to_model),
@@ -29,8 +29,8 @@ class TrainOneRectangleDNN(luigi.Task):
     def run(self):
 
         # load raw data
-        img_array = np.load(self._path_to_data)
-        labels = np.load(self._path_to_labels)
+        img_array = np.load((self.input()[0][0]).path)
+        labels = np.load((self.input()[0][1]).path)
 
         # splint into train and test data
         x_train, x_test, y_train, y_test = train_test_split(img_array,

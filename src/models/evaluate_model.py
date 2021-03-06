@@ -3,6 +3,7 @@ import luigi
 from pathlib import Path
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
+import pickle as pkl
 
 import tensorflow as tf
 from tensorflow import keras
@@ -20,6 +21,7 @@ class EvaluateOneRectangleDNN(luigi.Task):
     _path_to_model = Path("models/single_rec_dnn")
     _path_to_figures = Path("reports/figures/")
     _path_to_eval_results = Path("reports")
+    _path_to_interim = Path("data/interim/")
 
     def requires(self):
         yield MakeDataset()
@@ -30,11 +32,25 @@ class EvaluateOneRectangleDNN(luigi.Task):
         x_test = np.load(self._path_to_test_data / f"eval_images_array.npy")
         y_test = np.load(self._path_to_test_data / f"eval_bbox_array.npy")
 
+        # load scalers
+        img_scaler_path = self._path_to_interim / "img_scaler.pkl"
+        with open(img_scaler_path, 'rb') as open_file:
+            img_scaler = pkl.load(open_file)
+
+        bbox_scaler_path = self._path_to_interim /"bbox_scaler.pkl"
+        with open(bbox_scaler_path, 'rb') as open_file:
+            bbox_scaler = pkl.load(open_file)
+
+        # scale data for evaluation
+        scaled_imgs = img_scaler.transform(x_test)
+
+
         # load model to evaluate
         model = tf.keras.models.load_model(self._path_to_model)
 
         # Use model to predict
-        y_pred = model.predict(x_test)
+        y_pred_scaled = model.predict(scaled_imgs)
+        y_pred = bbox_scaler.inverse_transform(y_pred_scaled)
 
         # draw rectangles, true bboxes and predicted bboxes for n_plot cases
         fig = plt.figure()

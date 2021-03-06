@@ -1,6 +1,8 @@
 data/
 .idea/
 reports/
+models/
+notebooks/
 *.pyc
 *.png
 *.pdf

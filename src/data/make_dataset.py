@@ -18,12 +18,11 @@ class MakeDataset(luigi.Task):
     _max_object_dim_size = 4
     _num_objects_per_img = 1
 
-
     def output(self):
-        yield [luigi.LocalTarget(self._data_folder_path / f"image_array.npy"),
-               luigi.LocalTarget(self._data_folder_path / f"bbox_array.npy"),
-               luigi.LocalTarget(self._data_folder_path / f"eval_images_array.npy"),
-               luigi.LocalTarget(self._data_folder_path / f"eval_bbox_array.npy")]
+        return [luigi.LocalTarget(self._data_folder_path / f"image_array.npy"),
+                luigi.LocalTarget(self._data_folder_path / f"bbox_array.npy"),
+                luigi.LocalTarget(self._data_folder_path / f"eval_images_array.npy"),
+                luigi.LocalTarget(self._data_folder_path / f"eval_bbox_array.npy")]
 
     def run(self):
 
